@@ -1,7 +1,5 @@
 
 using System.Collections.Generic;
-using Cysharp.Threading.Tasks;
-using UnityEngine;
 using UnityEngine.AddressableAssets;
 
 namespace Bear
@@ -120,11 +118,16 @@ namespace Bear
             {
                 return rs;
             }else{
-                
+                var task =  UniTask<T>.Create();
+                var handler = Addressables.LoadAssetAsync<T>(address);
+                handler.Completed+=(handler)=>{
+                    var rs = (T)handler.Result;
+                    resource = rs;
+                    task.SetResult(rs);
+                    
+                };
 
-                //var res = await Addressables.LoadAssetAsync<T>(address).ToUniTask(Progress.Create<float>(x => Debug.Log(x)));
-                //return res;
-                var res = await Addressables.LoadAssetAsync<T>(address);
+                var res = await task;
                 return res;
             }
         }
