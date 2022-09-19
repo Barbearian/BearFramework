@@ -72,7 +72,13 @@ namespace Bear
             parent.AddChildrenNode(kid);
         }
 
+        public static bool TryGetParentNode(this INode node,out INode parent){
+            return Parent.TryGetValue(node,out parent);
+        }
+
         public static void Dispose(this INode node){
+            node.RemoveAllNodeData();
+
             if(Parent.TryGetValue(node,out var parent)){
                 parent.RemoveChildrenNode(node);
             }
@@ -87,95 +93,6 @@ namespace Bear
 
         
 
-        public static INodeData AddNodeData(this INode node, INodeData data)
-        {
-            var key = data.GetType();
-            var NodeData = node.GetNodeDataCollection();
-            var NodeDataRequests = node.GetNodeDataRequestCollection();
-
-            data.SetNodeDataRoot(node);
-
-            NodeData[key] = data;
-
-            if (NodeDataRequests.TryGetValue(key, out var requests))
-            {
-                foreach (var request in requests)
-                {
-                    request.Invoke(data);
-                }
-
-                NodeDataRequests.Remove(key);
-            }
-
-            return data;
-        }
-
-        public static bool RequestNodeData<T>(this INode node,System.Action<T> DOnDataRequested) where T:INodeData{
-            var key = typeof(T);
-            var NodeData = node.GetNodeDataCollection();
-            var NodeDataRequests = node.GetNodeDataRequestCollection();
-            if (NodeData.TryGetValue(key, out var value))
-            {
-                if (value is T tNodeData) {
-                    DOnDataRequested?.Invoke(tNodeData);
-                }
-                
-            }
-            else {
-                NodeDataRequests.Enqueue(
-                    key,
-                    
-                    (nodeData)=> {
-                    if (nodeData is T tNodeData)
-                    {
-                        DOnDataRequested?.Invoke(tNodeData);
-                    }
-
-                });
-            }
-            return true;
-        }
-
-        public static bool TryGetNodeData<T>(this INode node,out T data) where T:INodeData{
-            var NodeData = node.GetNodeDataCollection();
-            if(NodeData.TryGetValue(typeof(T),out var ndata)){
-                data = (T)ndata;
-                return true;
-            }else{
-                data = default;
-                return false;
-            }
-        }
-
-        public static T GetOrCreateNodeData<T>(this INode node, INodeData defaultNode) where T:INodeData{
-            var NodeData = node.GetNodeDataCollection();
-            if(NodeData.TryGetValue(typeof(T),out var ndata)){
-                return (T)ndata;
-            }else{
-                return (T)node.AddNodeData(defaultNode);
-            }
-        }
-
-        public static bool TryGetGlobalNodeData<T>(this IGlobalNodeDataAccessor accessor, out T data) where T: INodeData{
-
-            return GlobalNode.TryGetNodeData<T>(out data);
-        }
-
-        public static INodeData AddGlobalNodeData<T>(this IGlobalNodeDataAccessor accessor, INodeData data) where T : INodeData
-        {
-            return GlobalNode.AddNodeData(data);
-        }
-
-        public static INodeData AddGlobalNodeData(this IGlobalNodeDataAccessor accessor, INodeData data)
-        {
-            return GlobalNode.AddNodeData(data);
-        }
-
-
-
-        public static bool RequestGlobalNodeData<T>(this IGlobalNodeDataAccessor requestor,System.Action<T> request) where T : INodeData {
-            return GlobalNode.RequestNodeData(request);
-        }
 
 
 

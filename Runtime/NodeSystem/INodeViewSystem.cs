@@ -6,7 +6,7 @@ namespace Bear
         public ANode anode = new ANode();
 
         public void Dispose(){
-           anode.DisposeNodeInfo();
+           anode.Dispose();
         }
 
         private void OnDestroy() {
