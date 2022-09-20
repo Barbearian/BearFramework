@@ -23,7 +23,10 @@ namespace Bear{
         public Action<T> invoked;
 
         public void Cancel(){
-            invoker.invoker -= invoked;
+            if(invoker != null && invoker.invoker != null){
+                invoker.invoker -= invoked;
+            }
+            
         }
     }
 
