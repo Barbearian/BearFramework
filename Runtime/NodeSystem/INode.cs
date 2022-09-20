@@ -10,7 +10,7 @@ namespace Bear
                
     }
 
-    public struct ANode : INode
+    public class ANode : INode
     {
 
     }
