@@ -6,6 +6,7 @@ namespace Bear{
     public class NodeView : MonoBehaviour, INode
     {
         public ANode anode = new ANode();
+        
 
         public void Dispose(){
            anode.Dispose();

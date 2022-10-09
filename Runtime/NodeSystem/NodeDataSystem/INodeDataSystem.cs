@@ -7,8 +7,9 @@ namespace Bear{
     {
         public static Dictionary<INode,NodeInfo> nodeInfo = new Dictionary<INode, NodeInfo>();
         public static Dictionary<INodeData,NodeDataInfo> nodeDataInfo = new Dictionary<INodeData,NodeDataInfo>();
-        public static Dictionary<Type,INodeData> GetNodeDataCollection(this INode node){
-            if(nodeInfo.TryGetValue(node,out NodeInfo info)){
+        internal static Dictionary<Type,INodeData> GetOrCreateNodeDataCollection(this INode node){
+
+            if (nodeInfo.TryGetValue(node,out NodeInfo info)){
                 return info.nodeData;
             }else{
                 NodeInfo ninfo = new NodeInfo(){
@@ -89,10 +90,12 @@ namespace Bear{
         
     }
     public static class INodeDataAttachSystem{
-        public static INodeData AddNodeData(this INode node, INodeData data)
+        public static T AddNodeData<T>(this INode node, T data) where T : INodeData
         {
+
+
             var key = data.GetType();
-            var NodeData = node.GetNodeDataCollection();
+            var NodeData = node.GetOrCreateNodeDataCollection();
             
 
             
@@ -141,7 +144,7 @@ namespace Bear{
     public static class INodeDataFetchSystem{
         public static bool RequestNodeData<T>(this INode node,System.Action<T> DOnDataRequested) where T:INodeData{
             var key = typeof(T);
-            var NodeData = node.GetNodeDataCollection();
+            var NodeData = node.GetOrCreateNodeDataCollection();
             var NodeDataRequests = node.GetNodeDataRequestCollection();
             if (NodeData.TryGetValue(key, out var value))
             {
@@ -166,23 +169,63 @@ namespace Bear{
         }
 
         public static bool TryGetNodeData<T>(this INode node,out T data) where T:INodeData{
-            var NodeData = node.GetNodeDataCollection();
-            if(NodeData.TryGetValue(typeof(T),out var ndata)){
-                data = (T)ndata;
-                return true;
-            }else{
-                data = default;
-                return false;
+
+            if (INodeDataSystem.nodeInfo.ContainsKey(node))
+            {
+                var NodeData = node.GetOrCreateNodeDataCollection();
+                if (NodeData.TryGetValue(typeof(T), out var ndata))
+                {
+                    data = (T)ndata;
+                    return true;
+                }
             }
+
+            data = default;
+            return false;
+
         }
 
-        public static T GetOrCreateNodeData<T>(this INode node, INodeData defaultNode) where T:INodeData{
-            var NodeData = node.GetNodeDataCollection();
-            if(NodeData.TryGetValue(typeof(T),out var ndata)){
-                return (T)ndata;
-            }else{
+        public static bool TryGetFirstNodeDataInChildren<T>(this INode node, out T data) where T : INodeData {
+            var kids = node.GetAllKids();
+            foreach (var kid in kids) {
+                if (kid.TryGetNodeData(out data)) {
+                    return true;
+                }
+            }
+
+            data =default;
+            return false;
+        }
+
+        public static bool TryGetFirstNodeDataInParent<T>(this INode node, out T data) where T : INodeData
+        {
+            if (node.TryGetParentNode(out var parent))
+            {
+                if (parent.TryGetNodeData(out data))
+                {
+                    return true;
+                }
+                else {
+                    return parent.TryGetFirstNodeDataInParent(out data);
+                }
+            }
+          
+            data = default;
+            return false;
+            
+        }
+
+
+        public static T GetOrCreateNodeData<T>(this INode node, T defaultNode) where T:INodeData{
+            if (node.TryGetNodeData<T>(out T data))
+            {
+                return data;
+            }
+            else {
+
                 return (T)node.AddNodeData(defaultNode);
             }
+
         }
 
         public static bool TryGetGlobalNodeData<T>(this IGlobalNodeDataAccessor accessor, out T data) where T: INodeData{

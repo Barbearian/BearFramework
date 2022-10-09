@@ -68,6 +68,16 @@ namespace Bear
             return false;
         }
 
+        public static INode[] GetAllKids(this INode node) {
+            if (Children.TryGetValue(node, out var value))
+            {
+                return value.ToArray();
+            }
+            else { 
+                return Array.Empty<INode>();   
+            }
+        }
+
         public static void SetParentNode(this INode kid, INode parent){
             parent.AddChildrenNode(kid);
         }
